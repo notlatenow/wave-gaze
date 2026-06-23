@@ -489,7 +489,7 @@ export default function Waves() {
       videoRef.current?.play().catch(() => {});
     } else {
       // — Close —
-      s.bloomActive = false;
+
       if (s.rm) {
         // Reduced motion: instant restore
         s.eyeR = 0;
