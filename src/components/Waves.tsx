@@ -37,35 +37,41 @@ function easeInOutCubic(t: number): number {
 
 /* ── Eye path (world coords — no ctx.translate needed) ───────────────── */
 
-/** Chunky 5-arm starfish — fat convex arms, shallow valleys */
+/** 7-arm starfish with a lowered, widened body and rounded arms */
 function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const N = 5;
-  const outer = r;
-  const inner = r * 0.42; // valley depth — chunky but distinct
-  const start = -Math.PI / 2; // first arm tip points up
-  const step = Math.PI / N; // angle between each tip/valley
+  const N = 7;
+  const hx = cx;
+  const hy = cy + r * 0.45;
+  const outerR = r * 1.15;
+  const innerR = outerR * 0.90;
+  const spread = Math.PI * 0.82;
+  const startA = -Math.PI / 2 - spread / 2;
+  const segA = spread / N;
 
-  // Build the 10 alternating tip / valley points
-  const pts: [number, number][] = [];
-  for (let i = 0; i < N * 2; i++) {
-    const a = start + i * step;
-    const rad = i % 2 === 0 ? outer : inner;
-    pts.push([cx + Math.cos(a) * rad, cy + Math.sin(a) * rad]);
+  const ridgePts: [number, number][] = [];
+  const valleyPts: [number, number][] = [];
+
+  for (let i = 0; i < N; i++) {
+    const a = startA + (i + 0.5) * segA;
+    ridgePts.push([hx + Math.cos(a) * outerR, hy + Math.sin(a) * outerR]);
+  }
+
+  for (let i = 0; i <= N; i++) {
+    const a = startA + i * segA;
+    valleyPts.push([hx + Math.cos(a) * innerR, hy + Math.sin(a) * innerR]);
   }
 
   ctx.beginPath();
-  ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 0; i < pts.length; i++) {
-    const [px, py] = pts[i];
-    const [qx, qy] = pts[(i + 1) % pts.length];
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(valleyPts[0][0], valleyPts[0][1]);
 
-    // Control point = midpoint from center, scaled to push arm sides
-    // outward (convex) and valley sides slightly inward (defined valleys)
-    const mx = (px + qx) / 2 - cx;
-    const my = (py + qy) / 2 - cy;
-    const fac = i % 2 === 0 ? 1.18 : 0.86; // arm side / valley side
-    ctx.quadraticCurveTo(cx + mx * fac, cy + my * fac, qx, qy);
+  for (let i = 0; i < N; i++) {
+    const cpX = hx + (ridgePts[i][0] - hx) * 1.1;
+    const cpY = hy + (ridgePts[i][1] - hy) * 1.1;
+    ctx.quadraticCurveTo(cpX, cpY, valleyPts[i + 1][0], valleyPts[i + 1][1]);
   }
+
+  ctx.lineTo(hx, hy);
   ctx.closePath();
 }
 
@@ -258,7 +264,7 @@ export default function Waves() {
 
       /* ── EYE STATE ──────────────────────────────────────────────── */
       if (!s.rm) {
-        const maxR = Math.min(100, W * 0.22); // star outer radius at hover
+        const maxR = Math.min(85, W * 0.25); // star outer radius at hover
         if (s.bloomActive) {
           // Time-based bloom (easeInOutCubic over 84 frames ≈ 1.4 s)
           s.bloomClock = Math.min(1, s.bloomClock + 1 / 84);
