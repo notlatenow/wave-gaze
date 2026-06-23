@@ -117,9 +117,6 @@ interface State {
   eyeR: number;
   isOpen: boolean;
   openProgress: number;
-  bloomActive: boolean;
-  bloomClock: number;
-  radiusAtClick: number;
   veilAlpha: number;
   scanX: number;
   downX: number;

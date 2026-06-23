@@ -1,37 +1,36 @@
-# Reveal the full video on click
+## Goal
 
-## What's happening
-The teal "stripes" in the screenshot aren't threads or the scan-line overlay — they're the **gaps between the shell's lobes**. The shell shape (`drawStarPath`) is built from ~5 petal lobes with intentional ~14% gaps between them. Step 2 of `frame()` cuts only those lobes out of the teal paper background (step 1), so the gaps between lobes remain filled with teal. When the shell blooms to fill the screen, those gaps stretch into the wide vertical teal bands you see.
+Make the shell outline disappear on first click with the same gentle ease used when it reappears on second click. Right now open uses a fast cubic bloom that flies past the viewport; close uses a smooth lerp toward 0. We'll replace open with the symmetric inverse of close.
 
-The dashed thread "lashes" (step 4) already fade out correctly via `tAlpha = 0.5 * (1 - openProgress)`, so they're not the problem.
+## Change (single file)
 
-## Fix
-In `src/components/Waves.tsx`, skip the teal paper fill (step 1) once the shell is fully bloomed open, so the video shows through the entire viewport with no teal anywhere.
+`src/components/Waves.tsx` — eye-state block inside `frame()`:
 
-Change step 1 from an unconditional `fillRect` to:
+1. **Remove the bloom branch entirely.** Delete `s.bloomActive`, `s.bloomClock`, `s.radiusAtClick`, and the cubic-ease bloom math. Also remove the `bloomActive = true` / `radiusAtClick = s.eyeR` / `bloomClock = 0` setup in `onUp` (open branch), and the `s.bloomActive = false` in the close branch.
 
-```ts
-// 1 — Paper fill (skip once shell is fully bloomed → video fills viewport)
-const paperAlpha = s.isOpen ? Math.max(0, 1 - s.openProgress * 1.05) : 1;
-if (paperAlpha > 0.004) {
-  ctx.save();
-  ctx.globalCompositeOperation = "source-over";
-  ctx.globalAlpha = paperAlpha;
-  ctx.fillStyle = "#008CA8";
-  ctx.fillRect(0, 0, W, H);
-  ctx.restore();
-}
-```
+2. **Open uses the same lerp as close, just toward a large target.** Define a single `maxOpenR = 1.5 * Math.max(W, H)` and ease `eyeR` toward it with the same 0.1 factor that close uses to ease toward 0:
 
-This keeps the paper fully opaque during the hover/closed state and during the bloom animation, then fades it to zero as `openProgress` reaches 1 — so the gaps between lobes disappear along with the rest of the paper. On close, paper instantly returns (since `isOpen` flips back to false).
+   ```ts
+   const maxR = Math.min(130, W * 0.22);
+   const maxOpenR = 1.5 * Math.max(W, H);
+   const targetR = s.isOpen ? maxOpenR : (s.active ? maxR : 0);
+   s.eyeR += (targetR - s.eyeR) * 0.1;
+   ```
 
-Step 2's eye-cut becomes a no-op when there's nothing to cut, which is fine. Step 3 (loading veil / scan line) still runs only while the video buffers and is clipped to the shell, so it disappears as soon as the video is ready — unchanged behavior.
+   This naturally produces a gentle outward glide on open and a gentle inward glide on close — perfectly symmetric.
+
+3. **Eye center logic unchanged** (already eases to viewport center on open, follows cursor when closed).
+
+4. **`openProgress` unchanged** (still ramps 0↔1 at ±0.05/frame for paper + thread fades).
+
+5. **Reduced-motion branch in `onUp` unchanged** (still snaps `eyeR` to viewport size on open, 0 on close).
+
+6. **Clean up `State` interface** — drop `bloomActive`, `bloomClock`, `radiusAtClick` fields and their initializers.
 
 ## Untouched
-- Threads / lashes (step 4)
-- Shell shape, bloom animation, pointer logic
-- Closed-state appearance
-- Video element
 
-## Files
-- `src/components/Waves.tsx` — replace the ~6-line step 1 block (lines ~318–324)
+Shell path, threads/lashes, paper fade, video element, pointer handlers (except the bloom-setup lines noted above), cursor swap, reduced-motion path.
+
+## Result
+
+First click: shell outline glides outward smoothly past viewport edges at the same rate it glides back inward on second click. No more snappy cubic bloom.
