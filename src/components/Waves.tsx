@@ -208,6 +208,7 @@ export default function Waves() {
 
     /* Resize handler — measures the canvas's own bounding box */
     function resize() {
+      if (!canvas) return;
       const r = canvas.getBoundingClientRect();
       if (r.width === 0) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
