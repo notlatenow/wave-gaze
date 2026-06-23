@@ -38,16 +38,15 @@ function easeInOutCubic(t: number): number {
 /* ── Shell path (world coords — no ctx.translate needed) ─────────────── */
 
 /**
- * Scallop shell — 7 deep petal lobes fanning upward from a hinge,
- * plus 2 small rounded base lobes extending horizontally left and right.
- * Matches the reference image: deep valleys, rounded tips, ear bumps at base.
+ * Scallop shell — 7 graduated lobes (tallest center, shortest edges) plus
+ * 2 small base ear lobes. Each lobe is a separate sub-path so natural teal
+ * gaps appear between them. Tips are nearly circular (c2/c3 very close to tip).
  */
 function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const N = 7;
   const hx = cx;
-  const hy = cy + r * 0.45; // hinge below center; fan fills upward
+  const hy = cy + r * 0.4; // hinge reference point below center
   const outerR = r;
-  const innerR = r * 0.1; // small but visible valley radius
   const spread = Math.PI * 0.95; // ~171° fan
   const startA = -Math.PI / 2 - spread / 2;
   const segA = spread / N;
@@ -56,81 +55,44 @@ function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
     return [hx + Math.cos(a) * rad, hy + Math.sin(a) * rad];
   }
 
-  // Main fan valleys and tips
-  const valleys = Array.from({ length: N + 1 }, (_, i) => pt(startA + i * segA, innerR));
-  const tips = Array.from({ length: N }, (_, i) => pt(startA + (i + 0.5) * segA, outerR));
-
-  // Small base lobe tips — extend left/right from hinge, slightly below
-  const bR = r * 0.26;
-  const lbx = hx - bR;
-  const lby = hy + r * 0.03; // left ear tip
-  const rbx = hx + bR;
-  const rby = hy + r * 0.03; // right ear tip
-
-  const [v0x, v0y] = valleys[0]; // ≈ (hx - 0.05r, hy) — first main valley
-  const [vNx, vNy] = valleys[N]; // ≈ (hx + 0.05r, hy) — last main valley
+  const baseR = outerR * 0.22; // radius of each lobe's base from hinge
+  const hw = segA * 0.33; // half-angle of each lobe (66% of sector)
 
   ctx.beginPath();
-  ctx.moveTo(hx, hy);
 
-  // ── Left base lobe: hinge → left tip → first main valley ──────────────
-  ctx.bezierCurveTo(
-    hx - bR * 0.45,
-    hy, // cp1: going left from hinge
-    lbx,
-    lby + bR * 0.25, // cp2: approaching tip from below
-    lbx,
-    lby // left ear tip
-  );
-  ctx.bezierCurveTo(
-    lbx,
-    lby - bR * 0.25, // cp1: rising from left tip
-    v0x - r * 0.04,
-    v0y, // cp2: easing into first valley
-    v0x,
-    v0y // first main valley
-  );
-
-  // ── 7 main lobes ──────────────────────────────────────────────────────
+  // ── 7 graduated lobes — separate sub-paths give clean negative space ──
   for (let i = 0; i < N; i++) {
-    const vLA = startA + i * segA;
     const tA = startA + (i + 0.5) * segA;
-    const vRA = startA + (i + 1) * segA;
+    const dist = Math.abs(i - (N - 1) / 2);
+    const tipR = outerR * (1.0 - dist * 0.14);
 
-    const [tx, ty] = tips[i];
-    const [v1x, v1y] = valleys[i + 1];
+    const [bLx, bLy] = pt(tA - hw, baseR);
+    const [bRx, bRy] = pt(tA + hw, baseR);
+    const [tx, ty] = pt(tA, tipR);
 
-    // Left side: valley → tip
-    // CPs pushed PAST the valley boundary into adjacent sector → wide overlapping petals
-    const [c1x, c1y] = pt(vLA - segA * 0.5, outerR * 0.55);
-    const [c2x, c2y] = pt(tA - segA * 0.5, outerR * 0.95);
-    ctx.bezierCurveTo(c1x, c1y, c2x, c2y, tx, ty);
+    ctx.moveTo(bLx, bLy);
 
-    // Right side: tip → next valley (mirror)
-    const [c3x, c3y] = pt(tA + segA * 0.5, outerR * 0.95);
-    const [c4x, c4y] = pt(vRA + segA * 0.5, outerR * 0.55);
-    ctx.bezierCurveTo(c3x, c3y, c4x, c4y, v1x, v1y);
+    const [eLx, eLy] = pt(tA - hw * 0.7, tipR * 0.5);
+    const [nLx, nLy] = pt(tA - segA * 0.05, tipR * 0.97);
+    ctx.bezierCurveTo(eLx, eLy, nLx, nLy, tx, ty);
+
+    const [nRx, nRy] = pt(tA + segA * 0.05, tipR * 0.97);
+    const [eRx, eRy] = pt(tA + hw * 0.7, tipR * 0.5);
+    ctx.bezierCurveTo(nRx, nRy, eRx, eRy, bRx, bRy);
+
+    ctx.closePath();
   }
 
-  // ── Right base lobe: last main valley → right tip → hinge ─────────────
-  ctx.bezierCurveTo(
-    vNx + r * 0.04,
-    vNy, // cp1: going right from last valley
-    rbx,
-    rby + bR * 0.25, // cp2: approaching tip from below
-    rbx,
-    rby // right ear tip
-  );
-  ctx.bezierCurveTo(
-    rbx,
-    rby - bR * 0.25, // cp1: rising from right tip
-    hx + bR * 0.45,
-    hy, // cp2: easing back to hinge
-    hx,
-    hy // hinge
-  );
+  // ── 2 small base ear lobes (ellipses, sub-paths) ─────────────────────
+  const earCY = hy + r * 0.04;
+  const earRx = r * 0.13;
+  const earRy = r * 0.09;
 
-  ctx.closePath();
+  ctx.moveTo(hx - r * 0.16 + earRx, earCY);
+  ctx.ellipse(hx - r * 0.16, earCY, earRx, earRy, 0, 0, Math.PI * 2);
+
+  ctx.moveTo(hx + r * 0.16 + earRx, earCY);
+  ctx.ellipse(hx + r * 0.16, earCY, earRx, earRy, 0, 0, Math.PI * 2);
 }
 
 /* ── Types ───────────────────────────────────────────────────────────── */
