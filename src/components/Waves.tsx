@@ -292,7 +292,7 @@ export default function Waves() {
 
       /* ── EYE STATE ──────────────────────────────────────────────── */
       if (!s.rm) {
-        const maxR = Math.min(85, W * 0.25); // star outer radius at hover
+        const maxR = Math.min(130, W * 0.22); // star outer radius at hover
         if (s.bloomActive) {
           // Time-based bloom (easeInOutCubic over 84 frames ≈ 1.4 s)
           s.bloomClock = Math.min(1, s.bloomClock + 1 / 84);
