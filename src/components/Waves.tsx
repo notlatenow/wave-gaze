@@ -1,5 +1,5 @@
 /**
- * Waves.tsx — Ocean thread fabric with starfish video reveal
+ * Waves.tsx — Ocean thread fabric with scallop shell video reveal
  *
  * Wrap in a full-height container:
  *   <div style={{ width: "100vw", height: "100vh" }}>
@@ -35,73 +35,102 @@ function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-/* ── Eye path (world coords — no ctx.translate needed) ───────────────── */
+/* ── Shell path (world coords — no ctx.translate needed) ─────────────── */
 
-/** 7-arm starfish with deep valleys, wide fan, and rounded base lobes */
+/**
+ * Scallop shell — 7 deep petal lobes fanning upward from a hinge,
+ * plus 2 small rounded base lobes extending horizontally left and right.
+ * Matches the reference image: deep valleys, rounded tips, ear bumps at base.
+ */
 function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const N = 7;
   const hx = cx;
-  const hy = cy + r * 0.45;
-  const outerR = r * 1.15;
-  const innerR = r * 0.05;
-  const bR = r * 0.26;
-  const spread = Math.PI * 0.95;
+  const hy = cy + r * 0.45; // hinge below center; fan fills upward
+  const outerR = r;
+  const innerR = r * 0.05; // valleys almost at hinge
+  const spread = Math.PI * 0.95; // ~171° fan
   const startA = -Math.PI / 2 - spread / 2;
   const segA = spread / N;
 
-  const ridgePts: [number, number][] = [];
-  const valleyPts: [number, number][] = [];
-
-  for (let i = 0; i < N; i++) {
-    const a = startA + (i + 0.5) * segA;
-    ridgePts.push([hx + Math.cos(a) * outerR, hy + Math.sin(a) * outerR]);
+  function pt(a: number, rad: number): [number, number] {
+    return [hx + Math.cos(a) * rad, hy + Math.sin(a) * rad];
   }
 
-  for (let i = 0; i <= N; i++) {
-    const a = startA + i * segA;
-    valleyPts.push([hx + Math.cos(a) * innerR, hy + Math.sin(a) * innerR]);
-  }
+  // Main fan valleys and tips
+  const valleys = Array.from({ length: N + 1 }, (_, i) => pt(startA + i * segA, innerR));
+  const tips = Array.from({ length: N }, (_, i) => pt(startA + (i + 0.5) * segA, outerR));
 
-  const lobeLeft: [number, number] = [hx - bR, hy];
-  const lobeRight: [number, number] = [hx + bR, hy];
+  // Small base lobe tips — extend left/right from hinge, slightly below
+  const bR = r * 0.26;
+  const lbx = hx - bR;
+  const lby = hy + r * 0.03; // left ear tip
+  const rbx = hx + bR;
+  const rby = hy + r * 0.03; // right ear tip
+
+  const [v0x, v0y] = valleys[0]; // ≈ (hx - 0.05r, hy) — first main valley
+  const [vNx, vNy] = valleys[N]; // ≈ (hx + 0.05r, hy) — last main valley
 
   ctx.beginPath();
   ctx.moveTo(hx, hy);
 
-  // Left base lobe
+  // ── Left base lobe: hinge → left tip → first main valley ──────────────
   ctx.bezierCurveTo(
-    hx - bR * 0.2, hy - bR * 0.35,
-    lobeLeft[0], lobeLeft[1] - bR * 0.55,
-    lobeLeft[0], lobeLeft[1]
+    hx - bR * 0.45,
+    hy, // cp1: going left from hinge
+    lbx,
+    lby + bR * 0.25, // cp2: approaching tip from below
+    lbx,
+    lby // left ear tip
   );
   ctx.bezierCurveTo(
-    lobeLeft[0], lobeLeft[1] + bR * 0.55,
-    valleyPts[0][0] - bR * 0.15, valleyPts[0][1] + bR * 0.15,
-    valleyPts[0][0], valleyPts[0][1]
+    lbx,
+    lby - bR * 0.25, // cp1: rising from left tip
+    v0x - r * 0.04,
+    v0y, // cp2: easing into first valley
+    v0x,
+    v0y // first main valley
   );
 
-  // Seven arms
+  // ── 7 main lobes ──────────────────────────────────────────────────────
   for (let i = 0; i < N; i++) {
-    const cpX = hx + (ridgePts[i][0] - hx) * 1.1;
-    const cpY = hy + (ridgePts[i][1] - hy) * 1.1;
-    ctx.quadraticCurveTo(cpX, cpY, valleyPts[i + 1][0], valleyPts[i + 1][1]);
+    const vLA = startA + i * segA;
+    const tA = startA + (i + 0.5) * segA;
+    const vRA = startA + (i + 1) * segA;
+
+    const [tx, ty] = tips[i];
+    const [v1x, v1y] = valleys[i + 1];
+
+    // Left side: valley → tip (swing wide for a fat rounded petal)
+    const [c1x, c1y] = pt(vLA + segA * 0.32, outerR * 0.74);
+    const [c2x, c2y] = pt(tA - segA * 0.16, outerR * 0.96);
+    ctx.bezierCurveTo(c1x, c1y, c2x, c2y, tx, ty);
+
+    // Right side: tip → next valley (mirrors the left)
+    const [c3x, c3y] = pt(tA + segA * 0.16, outerR * 0.96);
+    const [c4x, c4y] = pt(vRA - segA * 0.32, outerR * 0.74);
+    ctx.bezierCurveTo(c3x, c3y, c4x, c4y, v1x, v1y);
   }
 
-  // Right base lobe
+  // ── Right base lobe: last main valley → right tip → hinge ─────────────
   ctx.bezierCurveTo(
-    valleyPts[N][0] + bR * 0.15, valleyPts[N][1] + bR * 0.15,
-    lobeRight[0], lobeRight[1] + bR * 0.55,
-    lobeRight[0], lobeRight[1]
+    vNx + r * 0.04,
+    vNy, // cp1: going right from last valley
+    rbx,
+    rby + bR * 0.25, // cp2: approaching tip from below
+    rbx,
+    rby // right ear tip
   );
   ctx.bezierCurveTo(
-    lobeRight[0], lobeRight[1] - bR * 0.55,
-    hx + bR * 0.2, hy - bR * 0.35,
-    hx, hy
+    rbx,
+    rby - bR * 0.25, // cp1: rising from right tip
+    hx + bR * 0.45,
+    hy, // cp2: easing back to hinge
+    hx,
+    hy // hinge
   );
 
   ctx.closePath();
 }
-
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -292,7 +321,7 @@ export default function Waves() {
 
       /* ── EYE STATE ──────────────────────────────────────────────── */
       if (!s.rm) {
-        const maxR = Math.min(130, W * 0.22); // star outer radius at hover
+        const maxR = Math.min(130, W * 0.22); // shell radius at hover
         if (s.bloomActive) {
           // Time-based bloom (easeInOutCubic over 84 frames ≈ 1.4 s)
           s.bloomClock = Math.min(1, s.bloomClock + 1 / 84);
@@ -545,7 +574,7 @@ export default function Waves() {
       onPointerUp={onUp}
     >
       {/* Screen-reader label */}
-      <h1 className="sr-only">Waves — interactive ocean thread fabric</h1>
+      <h1 className="sr-only">Waves — interactive ocean thread fabric with scallop shell reveal</h1>
 
       {/* ── Layer 1: video (bottom) ───────────────────────────────── */}
       <video
