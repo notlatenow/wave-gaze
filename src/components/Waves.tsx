@@ -37,14 +37,15 @@ function easeInOutCubic(t: number): number {
 
 /* ── Eye path (world coords — no ctx.translate needed) ───────────────── */
 
-/** 7-arm starfish with a lowered, widened body and rounded arms */
+/** 7-arm starfish with deep valleys, wide fan, and rounded base lobes */
 function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const N = 7;
   const hx = cx;
   const hy = cy + r * 0.45;
   const outerR = r * 1.15;
-  const innerR = outerR * 0.90;
-  const spread = Math.PI * 0.82;
+  const innerR = r * 0.05;
+  const bR = r * 0.26;
+  const spread = Math.PI * 0.95;
   const startA = -Math.PI / 2 - spread / 2;
   const segA = spread / N;
 
@@ -61,19 +62,46 @@ function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
     valleyPts.push([hx + Math.cos(a) * innerR, hy + Math.sin(a) * innerR]);
   }
 
+  const lobeLeft: [number, number] = [hx - bR, hy];
+  const lobeRight: [number, number] = [hx + bR, hy];
+
   ctx.beginPath();
   ctx.moveTo(hx, hy);
-  ctx.lineTo(valleyPts[0][0], valleyPts[0][1]);
 
+  // Left base lobe
+  ctx.bezierCurveTo(
+    hx - bR * 0.2, hy - bR * 0.35,
+    lobeLeft[0], lobeLeft[1] - bR * 0.55,
+    lobeLeft[0], lobeLeft[1]
+  );
+  ctx.bezierCurveTo(
+    lobeLeft[0], lobeLeft[1] + bR * 0.55,
+    valleyPts[0][0] - bR * 0.15, valleyPts[0][1] + bR * 0.15,
+    valleyPts[0][0], valleyPts[0][1]
+  );
+
+  // Seven arms
   for (let i = 0; i < N; i++) {
     const cpX = hx + (ridgePts[i][0] - hx) * 1.1;
     const cpY = hy + (ridgePts[i][1] - hy) * 1.1;
     ctx.quadraticCurveTo(cpX, cpY, valleyPts[i + 1][0], valleyPts[i + 1][1]);
   }
 
-  ctx.lineTo(hx, hy);
+  // Right base lobe
+  ctx.bezierCurveTo(
+    valleyPts[N][0] + bR * 0.15, valleyPts[N][1] + bR * 0.15,
+    lobeRight[0], lobeRight[1] + bR * 0.55,
+    lobeRight[0], lobeRight[1]
+  );
+  ctx.bezierCurveTo(
+    lobeRight[0], lobeRight[1] - bR * 0.55,
+    hx + bR * 0.2, hy - bR * 0.35,
+    hx, hy
+  );
+
   ctx.closePath();
 }
+
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -335,7 +363,7 @@ export default function Waves() {
           ctx.fillRect(0, 0, W, H);
 
           // Scan line — paper-colored vertical stripe drifting across
-          const ew = s.eyeR * 1.9;
+          const ew = s.eyeR * 2.0; // shell is ~2r wide
           s.scanX = (s.scanX + 1.6) % (ew * 2);
           ctx.globalAlpha = 0.4;
           ctx.strokeStyle = "#008CA8";
