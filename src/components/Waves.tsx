@@ -315,13 +315,16 @@ export default function Waves() {
       /* ── DRAW ───────────────────────────────────────────────────── */
       ctx.clearRect(0, 0, W, H);
 
-      // 1 — Paper fill
-      ctx.save();
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#008CA8";
-      ctx.fillRect(0, 0, W, H);
-      ctx.restore();
+      // 1 — Paper fill (skip once shell is fully bloomed → video fills viewport)
+      const paperAlpha = s.isOpen ? Math.max(0, 1 - s.openProgress * 1.05) : 1;
+      if (paperAlpha > 0.004) {
+        ctx.save();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = paperAlpha;
+        ctx.fillStyle = "#008CA8";
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
 
       const eyeVisible = !s.rm && s.eyeR > 0.5;
 
