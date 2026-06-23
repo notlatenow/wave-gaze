@@ -179,6 +179,7 @@ export default function Waves() {
 
     /* Static frame for reduced-motion / post-close */
     function drawStatic() {
+      if (!ctx) return;
       const { cssW: W, cssH: H, threads, P } = s;
       if (!W) return;
       ctx.clearRect(0, 0, W, H);
