@@ -4,10 +4,10 @@ import Waves from "@/components/Waves";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Waves" },
-      { name: "description", content: "Interactive ocean thread fabric with starfish video reveal." },
-      { property: "og:title", content: "Waves" },
-      { property: "og:description", content: "Interactive ocean thread fabric with starfish video reveal." },
+      { title: "Wave Gaze" },
+      { name: "description", content: "Swim through the waves & gaze at the sea creature cuties!" },
+      { property: "og:title", content: "Wave Gaze" },
+      { property: "og:description", content: "Swim through the waves & gaze at the sea creature cuties!" },
     ],
   }),
   component: Index,
