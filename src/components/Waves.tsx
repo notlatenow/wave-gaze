@@ -47,7 +47,7 @@ function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
   const hx = cx;
   const hy = cy + r * 0.45; // hinge below center; fan fills upward
   const outerR = r;
-  const innerR = r * 0.05; // valleys almost at hinge
+  const innerR = r * 0.1; // small but visible valley radius
   const spread = Math.PI * 0.95; // ~171° fan
   const startA = -Math.PI / 2 - spread / 2;
   const segA = spread / N;
@@ -100,14 +100,15 @@ function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
     const [tx, ty] = tips[i];
     const [v1x, v1y] = valleys[i + 1];
 
-    // Left side: valley → tip (swing wide for a fat rounded petal)
-    const [c1x, c1y] = pt(vLA + segA * 0.32, outerR * 0.74);
-    const [c2x, c2y] = pt(tA - segA * 0.16, outerR * 0.96);
+    // Left side: valley → tip
+    // CPs pushed PAST the valley boundary into adjacent sector → wide overlapping petals
+    const [c1x, c1y] = pt(vLA - segA * 0.5, outerR * 0.55);
+    const [c2x, c2y] = pt(tA - segA * 0.5, outerR * 0.95);
     ctx.bezierCurveTo(c1x, c1y, c2x, c2y, tx, ty);
 
-    // Right side: tip → next valley (mirrors the left)
-    const [c3x, c3y] = pt(tA + segA * 0.16, outerR * 0.96);
-    const [c4x, c4y] = pt(vRA - segA * 0.32, outerR * 0.74);
+    // Right side: tip → next valley (mirror)
+    const [c3x, c3y] = pt(tA + segA * 0.5, outerR * 0.95);
+    const [c4x, c4y] = pt(vRA + segA * 0.5, outerR * 0.55);
     ctx.bezierCurveTo(c3x, c3y, c4x, c4y, v1x, v1y);
   }
 
