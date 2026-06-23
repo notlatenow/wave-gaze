@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Wave Gaze" },
+      { name: "description", content: "Swim through the waves & gaze at the sea creature cuties!" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Wave Gaze" },
+      { property: "og:description", content: "Swim through the waves & gaze at the sea creature cuties!" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Wave Gaze" },
+      { name: "twitter:description", content: "Swim through the waves & gaze at the sea creature cuties!" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5a0361fe-9554-4d23-969c-73868dcc9795/id-preview-552d5334--9d4cb9f2-1429-410a-913c-de8672b7ed23.lovable.app-1782217010078.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5a0361fe-9554-4d23-969c-73868dcc9795/id-preview-552d5334--9d4cb9f2-1429-410a-913c-de8672b7ed23.lovable.app-1782217010078.png" },
     ],
     links: [
       {
