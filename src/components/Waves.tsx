@@ -38,14 +38,15 @@ function easeInOutCubic(t: number): number {
 /* ── Shell path (world coords — no ctx.translate needed) ─────────────── */
 
 /**
- * Scallop shell — 7 graduated lobes (tallest center, shortest edges) plus
- * 2 small base ear lobes. Each lobe is a separate sub-path so natural teal
- * gaps appear between them. Tips are nearly circular (c2/c3 very close to tip).
+ * Scallop shell — every lobe is a pie-slice sub-path: straight sides from
+ * the hinge point to the arc edges, then a TRUE CIRCLE ARC across the top.
+ * This guarantees: convergent base (no sun-ray spread), perfectly round tips,
+ * visible gaps between lobes, and graduated heights center→edge.
  */
 function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const N = 7;
   const hx = cx;
-  const hy = cy + r * 0.4; // hinge reference point below center
+  const hy = cy + r * 0.38; // hinge — all lobes radiate from here
   const outerR = r;
   const spread = Math.PI * 0.95; // ~171° fan
   const startA = -Math.PI / 2 - spread / 2;
@@ -55,44 +56,41 @@ function drawStarPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: 
     return [hx + Math.cos(a) * rad, hy + Math.sin(a) * rad];
   }
 
-  const baseR = outerR * 0.22; // radius of each lobe's base from hinge
-  const hw = segA * 0.33; // half-angle of each lobe (66% of sector)
+  // hw controls lobe width: 43% of sector each side → 14% teal gap between lobes
+  const hw = segA * 0.43;
 
   ctx.beginPath();
 
-  // ── 7 graduated lobes — separate sub-paths give clean negative space ──
+  // ── 7 graduated lobes ────────────────────────────────────────────────
   for (let i = 0; i < N; i++) {
     const tA = startA + (i + 0.5) * segA;
-    const dist = Math.abs(i - (N - 1) / 2);
-    const tipR = outerR * (1.0 - dist * 0.14);
+    const dist = Math.abs(i - (N - 1) / 2); // 3, 2, 1, 0, 1, 2, 3
+    const tipR = outerR * (1.0 - dist * 0.13); // 0.61, 0.74, 0.87, 1.00, ...
 
-    const [bLx, bLy] = pt(tA - hw, baseR);
-    const [bRx, bRy] = pt(tA + hw, baseR);
-    const [tx, ty] = pt(tA, tipR);
-
-    ctx.moveTo(bLx, bLy);
-
-    const [eLx, eLy] = pt(tA - hw * 0.7, tipR * 0.5);
-    const [nLx, nLy] = pt(tA - segA * 0.05, tipR * 0.97);
-    ctx.bezierCurveTo(eLx, eLy, nLx, nLy, tx, ty);
-
-    const [nRx, nRy] = pt(tA + segA * 0.05, tipR * 0.97);
-    const [eRx, eRy] = pt(tA + hw * 0.7, tipR * 0.5);
-    ctx.bezierCurveTo(nRx, nRy, eRx, eRy, bRx, bRy);
-
+    ctx.moveTo(hx, hy); // converge at hinge
+    ctx.lineTo(...pt(tA - hw, tipR)); // left straight side
+    ctx.arc(hx, hy, tipR, tA - hw, tA + hw); // true circle arc top
+    ctx.lineTo(hx, hy); // right straight side
     ctx.closePath();
   }
 
-  // ── 2 small base ear lobes (ellipses, sub-paths) ─────────────────────
-  const earCY = hy + r * 0.04;
-  const earRx = r * 0.13;
-  const earRy = r * 0.09;
+  // ── 2 small ear lobes (horizontal, left and right of hinge) ──────────
+  const earR = outerR * 0.24;
+  const earHW = 0.18; // half-angle in radians (~10°)
 
-  ctx.moveTo(hx - r * 0.16 + earRx, earCY);
-  ctx.ellipse(hx - r * 0.16, earCY, earRx, earRy, 0, 0, Math.PI * 2);
+  // Left ear
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(...pt(Math.PI - earHW, earR));
+  ctx.arc(hx, hy, earR, Math.PI - earHW, Math.PI + earHW);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
 
-  ctx.moveTo(hx + r * 0.16 + earRx, earCY);
-  ctx.ellipse(hx + r * 0.16, earCY, earRx, earRy, 0, 0, Math.PI * 2);
+  // Right ear
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(...pt(-earHW, earR));
+  ctx.arc(hx, hy, earR, -earHW, earHW);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
 }
 
 /* ── Types ───────────────────────────────────────────────────────────── */
