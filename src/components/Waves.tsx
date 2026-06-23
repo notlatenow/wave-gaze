@@ -480,12 +480,8 @@ export default function Waves() {
         // Reduced motion: instant cut
         s.eyeR = 1.5 * Math.max(s.cssW, s.cssH);
         s.openProgress = 1;
-      } else {
-        // Full bloom animation
-        s.radiusAtClick = s.eyeR;
-        s.bloomClock = 0;
-        s.bloomActive = true;
       }
+
       if (s.pauseTimer) {
         clearTimeout(s.pauseTimer);
         s.pauseTimer = null;
