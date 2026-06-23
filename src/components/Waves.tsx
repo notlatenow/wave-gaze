@@ -277,18 +277,10 @@ export default function Waves() {
       /* ── EYE STATE ──────────────────────────────────────────────── */
       if (!s.rm) {
         const maxR = Math.min(130, W * 0.22); // shell radius at hover
-        if (s.bloomActive) {
-          // Time-based bloom (easeInOutCubic over 84 frames ≈ 1.4 s)
-          s.bloomClock = Math.min(1, s.bloomClock + 1 / 84);
-          const maxBloom = 1.5 * Math.max(W, H);
-          s.eyeR = s.radiusAtClick + (maxBloom - s.radiusAtClick) * easeInOutCubic(s.bloomClock);
-          if (s.bloomClock >= 1) s.bloomActive = false;
-        } else if (!s.isOpen) {
-          // Normal pointer tracking — ease toward cursor or 0
-          s.eyeR += ((s.active ? maxR : 0) - s.eyeR) * 0.1;
-        }
+        const maxOpenR = 1.5 * Math.max(W, H);
+        const targetR = s.isOpen ? maxOpenR : s.active ? maxR : 0;
+        s.eyeR += (targetR - s.eyeR) * 0.1;
 
-        // When isOpen and bloom is done, eyeR stays at its bloomed value.
 
         // Eye center
         if (s.isOpen) {
