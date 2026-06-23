@@ -117,9 +117,6 @@ interface State {
   eyeR: number;
   isOpen: boolean;
   openProgress: number;
-  bloomActive: boolean;
-  bloomClock: number;
-  radiusAtClick: number;
   veilAlpha: number;
   scanX: number;
   downX: number;
@@ -157,9 +154,6 @@ export default function Waves() {
     eyeR: 0,
     isOpen: false,
     openProgress: 0,
-    bloomActive: false,
-    bloomClock: 0,
-    radiusAtClick: 0,
     veilAlpha: 0,
     scanX: 0,
     downX: 0,
@@ -283,18 +277,10 @@ export default function Waves() {
       /* ── EYE STATE ──────────────────────────────────────────────── */
       if (!s.rm) {
         const maxR = Math.min(130, W * 0.22); // shell radius at hover
-        if (s.bloomActive) {
-          // Time-based bloom (easeInOutCubic over 84 frames ≈ 1.4 s)
-          s.bloomClock = Math.min(1, s.bloomClock + 1 / 84);
-          const maxBloom = 1.5 * Math.max(W, H);
-          s.eyeR = s.radiusAtClick + (maxBloom - s.radiusAtClick) * easeInOutCubic(s.bloomClock);
-          if (s.bloomClock >= 1) s.bloomActive = false;
-        } else if (!s.isOpen) {
-          // Normal pointer tracking — ease toward cursor or 0
-          s.eyeR += ((s.active ? maxR : 0) - s.eyeR) * 0.1;
-        }
+        const maxOpenR = 1.5 * Math.max(W, H);
+        const targetR = s.isOpen ? maxOpenR : s.active ? maxR : 0;
+        s.eyeR += (targetR - s.eyeR) * 0.1;
 
-        // When isOpen and bloom is done, eyeR stays at its bloomed value.
 
         // Eye center
         if (s.isOpen) {
@@ -494,12 +480,8 @@ export default function Waves() {
         // Reduced motion: instant cut
         s.eyeR = 1.5 * Math.max(s.cssW, s.cssH);
         s.openProgress = 1;
-      } else {
-        // Full bloom animation
-        s.radiusAtClick = s.eyeR;
-        s.bloomClock = 0;
-        s.bloomActive = true;
       }
+
       if (s.pauseTimer) {
         clearTimeout(s.pauseTimer);
         s.pauseTimer = null;
@@ -507,7 +489,7 @@ export default function Waves() {
       videoRef.current?.play().catch(() => {});
     } else {
       // — Close —
-      s.bloomActive = false;
+
       if (s.rm) {
         // Reduced motion: instant restore
         s.eyeR = 0;
