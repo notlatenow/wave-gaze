@@ -221,6 +221,7 @@ export default function Waves() {
 
     /* ── Main render frame ─────────────────────────────────────────── */
     function frame() {
+      if (!ctx) return;
       const { cssW: W, cssH: H, threads, P } = s;
       if (!threads.length || W === 0) return;
 
