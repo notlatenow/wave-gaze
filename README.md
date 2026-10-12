@@ -1,5 +1,8 @@
 # Ocean Bloom
 
+See the build in action on lovable --> https://wave-gaze.lovable.app/
+
+
 Render the following code as the main page for a new project:
 
 /**
